@@ -45,7 +45,8 @@ bool cNPM1300::begin()
     this->m_wire->begin();
     this->setState(State::Initial);
 
-    bool result = this->reset();
+    // it will return Buck 1 and Buck 2 status
+    bool result = this->getBuckStatus();
     return result;
     }
 
@@ -144,6 +145,14 @@ uint8_t cNPM1300::getVbusStatus()
 
     this->readRegister(Register::VbusInStatus, vBusStatus);
     return vBusStatus;
+    }
+
+uint8_t cNPM1300::getBuckStatus()
+    {
+    uint8_t vBuckStatus;
+
+    this->readRegister(Register::BuckStatus, vBuckStatus);
+    return vBuckStatus;
     }
 
 bool cNPM1300::setBuck_1(bool state)

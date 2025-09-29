@@ -601,6 +601,9 @@ public:
     /// \brief get the status of Vbus
     uint8_t getVbusStatus();
 
+    /// \brief get the status of Buck
+    uint8_t getBuckStatus();
+
     /// \brief enable or disable the Buck 1
     ///
     /// \param [in] state true to enable and false to disable.
