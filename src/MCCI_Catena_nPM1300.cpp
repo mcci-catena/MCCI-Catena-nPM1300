@@ -365,12 +365,27 @@ bool cNPM1300::ledToggle(cNPM1300::Led led)
     return result;
     }
 
-bool cNPM1300::setInCurrentLimitVbus(bool limit)
+bool cNPM1300::setTaskUpdateILimit(bool limit)
     {
     bool result;
     result = this->writeRegister(Register::TaskUpdateILimSw, (uint8_t)limit);
 
     return result;
+    }
+
+bool cNPM1300::setInCurrentLimitVbus(cNPM1300::Current limit)
+    {
+    bool result;
+    result = this->writeRegister(Register::VbusInILim_0, (uint8_t)limit);
+
+    return result;
+    }
+
+uint8_t cNPM1300::readInCurrentLimitVbus()
+    {
+    uint8_t inLimitVbus;
+    this->readRegister(Register::VbusInILim_0, inLimitVbus);
+    return inLimitVbus;
     }
 
 bool cNPM1300::setStartupInCurrentLimitVbus(cNPM1300::Current limit)
@@ -379,6 +394,13 @@ bool cNPM1300::setStartupInCurrentLimitVbus(cNPM1300::Current limit)
     result = this->writeRegister(Register::VbusInILimStartup, (uint8_t)limit);
 
     return result;
+    }
+
+uint8_t cNPM1300::readStartupInCurrentLimitVbus()
+    {
+    uint8_t startupLimVbus;
+    this->readRegister(Register::VbusInILimStartup, startupLimVbus);
+    return startupLimVbus;
     }
 
 bool cNPM1300::suspendVbus(bool mode)

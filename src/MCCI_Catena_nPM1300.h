@@ -766,25 +766,41 @@ public:
     ///
     bool ledToggle(cNPM1300::Led led);
 
-    /// \brief set the input current linit for Vbus at startup
+    /// \brief select the between Vbus startup and Vbus limit
     ///
-    /// \param [in] limit true to use Vbus limit current false to disable.
+    /// \param [in] limit true to use Vbus limit current false to use Vbus startup current.
     ///
     /// \return
     ///     \c true for success, \c false for failure. The
     ///     last error is set in case of error.
     ///
-    bool setInCurrentLimitVbus(bool limit);
+    bool setTaskUpdateILimit(bool limit);
+
+    /// \brief set the input current limit for Vbus limit
+    ///
+    /// \param [in] limit is the value to set between 100mA to 1500mA.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error.
+    ///
+    bool setInCurrentLimitVbus(cNPM1300::Current limit);
+
+    /// \brief read the Vbus limit current
+    uint8_t readInCurrentLimitVbus();
 
     /// \brief set the input current linit for Vbus
     ///
-    /// \param [in] limit true to use Vbus limit current false to disable.
+    /// \param [in] limit is the value to set between 100mA to 1500mA.
     ///
     /// \return
     ///     \c true for success, \c false for failure. The
     ///     last error is set in case of error.
     ///
     bool setStartupInCurrentLimitVbus(cNPM1300::Current limit);
+
+    /// \brief read the Vbus startup current
+    uint8_t readStartupInCurrentLimitVbus();
 
     /// \brief set the suspend mode for Vbus
     ///
