@@ -485,12 +485,13 @@ private:
         "I2cReadShort\0"
         "I2cReadRequest\0"
         "I2cReadLong\0"
-        "WakeupFailed\0"
         "Busy\0"
         "NotMeasuring\0"
         "Crc\0"
         "Uninitialized\0"
         "InvalidDataUnit\0"
+        "I2cWriteBufferFailed\0"
+        "I2cWriteFailed\0"
         ;
 
     /// \brief table of state names, '\0'-separated.
