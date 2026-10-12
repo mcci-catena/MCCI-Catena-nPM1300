@@ -511,10 +511,10 @@ bool cNPM1300::setChargeCurrent(uint16_t limit)
         }
 
     uint8_t msb = limit/4;
-    uint8_t lsb = 1;
+    uint8_t lsb = 0;
     if ((limit/2) % 2)
         {
-        lsb = 0;
+        lsb = 1;
         }
 
     result_1 = this->writeRegister(Register::BChgISetMsb, msb);
