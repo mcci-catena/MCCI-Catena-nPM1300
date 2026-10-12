@@ -104,8 +104,11 @@ float cNPM1300::measureVbus()
 
     this->readRegister(Register::AdcVbatResultMsb_3, vBusMsb);
     this->readRegister(Register::AdcGpResultLsbs_1, vBusLsb);
-    // We need only data from bit 0 and 1
-    vBusLsb = (vBusLsb & 0x03);
+    // AdcGpResultLsbs_1 is shared between burst-mode VBAT0..3 and VBUS,
+    // the same way AdcVbatResultMsb_3 is shared between VBAT3-burst and
+    // VBUS: when TASK_VBUS7_MEASURE was triggered, the VBUS LSBs are in
+    // field D (bits 7:6), the same field used for VBAT3-burst's LSBs.
+    vBusLsb = (vBusLsb & 0xC0) >> 6;
     // Get the 10 bit ADC result
     uint16_t result = (vBusMsb << 2) | vBusLsb;
 
