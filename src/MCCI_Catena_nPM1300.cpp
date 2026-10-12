@@ -87,12 +87,24 @@ float cNPM1300::measureVbat()
 
     this->readRegister(Register::AdcVbatResultMsb, vBatMsb);
     this->readRegister(Register::AdcGpResultLsbs_0, vBatLsb);
-    // We need only data from bit 0 and 1
-    vBatLsb = (vBatLsb & 0x03);
-    // Get the 10 bit ADC result
+    // ADCGP0RESULTLSBS field A (bits 1:0) holds the VBAT measurement's
+    // LSBs. See datasheet section 7.1.10.18, ADCGP0RESULTLSBS.
+    constexpr uint8_t kVbatLsbMask = 0x03;
+    vBatLsb = (vBatLsb & kVbatLsbMask);
+
+    // Combine the 8-bit MSB and 2-bit LSB into the full 10-bit ADC
+    // result. See datasheet section 7.1.4, Table 28 "Measurement
+    // results".
     uint16_t result = (vBatMsb << 2) | vBatLsb;
 
-    return (result / 1023.0) * 5.0;
+    // VBAT = (ADC result / full-scale ADC code) * VFSVBAT. The ADC is a
+    // 10-bit converter, and VFSVBAT (the full-scale voltage for the
+    // VBAT channel) is 5.0V. See datasheet section 7.1.4 (the "VBAT"
+    // equation) and section 7.1.9, Table 29 (Electrical specification),
+    // symbol VFSVBAT.
+    constexpr float kAdcMaxCode10Bit = 1023.0f;
+    constexpr float kVfsVbat = 5.0f;
+    return (result / kAdcMaxCode10Bit) * kVfsVbat;
     }
 
 float cNPM1300::measureVbus()
@@ -108,11 +120,25 @@ float cNPM1300::measureVbus()
     // the same way AdcVbatResultMsb_3 is shared between VBAT3-burst and
     // VBUS: when TASK_VBUS7_MEASURE was triggered, the VBUS LSBs are in
     // field D (bits 7:6), the same field used for VBAT3-burst's LSBs.
-    vBusLsb = (vBusLsb & 0xC0) >> 6;
-    // Get the 10 bit ADC result
+    // See datasheet sections 7.1.10.22 (ADCVBAT3RESULTMSB) and
+    // 7.1.10.23 (ADCGP1RESULTLSBS).
+    constexpr uint8_t kVbusLsbMask = 0xC0;
+    constexpr uint8_t kVbusLsbShift = 6;
+    vBusLsb = (vBusLsb & kVbusLsbMask) >> kVbusLsbShift;
+
+    // Combine the 8-bit MSB and 2-bit LSB into the full 10-bit ADC
+    // result. See datasheet section 7.1.4, Table 28 "Measurement
+    // results".
     uint16_t result = (vBusMsb << 2) | vBusLsb;
 
-    return (result / 1023.0) * 7.5;
+    // VBUS = (ADC result / full-scale ADC code) * VFSVBUS. The ADC is a
+    // 10-bit converter, and VFSVBUS (the full-scale voltage for the
+    // VBUS channel) is 7.5V. See datasheet section 7.1.4 (the "VBUS"
+    // equation) and section 7.1.9, Table 29 (Electrical specification),
+    // symbol VFSVBUS.
+    constexpr float kAdcMaxCode10Bit = 1023.0f;
+    constexpr float kVfsVbus = 7.5f;
+    return (result / kAdcMaxCode10Bit) * kVfsVbus;
     }
 
 float cNPM1300::measureVsys()
@@ -124,12 +150,25 @@ float cNPM1300::measureVsys()
 
     this->readRegister(Register::AdcVsysResultMsb, vSysMsb);
     this->readRegister(Register::AdcGpResultLsbs_0, vSysLsb);
-    // We need only data from bit 6 and 7
-    vSysLsb = (vSysLsb & 0xC0) >> 6;
-    // Get the 10 bit ADC result
+    // ADCGP0RESULTLSBS field D (bits 7:6) holds the VSYS measurement's
+    // LSBs. See datasheet section 7.1.10.18, ADCGP0RESULTLSBS.
+    constexpr uint8_t kVsysLsbMask = 0xC0;
+    constexpr uint8_t kVsysLsbShift = 6;
+    vSysLsb = (vSysLsb & kVsysLsbMask) >> kVsysLsbShift;
+
+    // Combine the 8-bit MSB and 2-bit LSB into the full 10-bit ADC
+    // result. See datasheet section 7.1.4, Table 28 "Measurement
+    // results".
     uint16_t result = (vSysMsb << 2) | vSysLsb;
 
-    return (result / 1023.0) * 6.375;
+    // VSYS = (ADC result / full-scale ADC code) * VFSVSYS. The ADC is a
+    // 10-bit converter, and VFSVSYS (the full-scale voltage for the
+    // VSYS channel) is 6.375V. See datasheet section 7.1.4 (the "VSYS"
+    // equation) and section 7.1.9, Table 29 (Electrical specification),
+    // symbol VFSVSYS.
+    constexpr float kAdcMaxCode10Bit = 1023.0f;
+    constexpr float kVfsVsys = 6.375f;
+    return (result / kAdcMaxCode10Bit) * kVfsVsys;
     }
 
 float cNPM1300::measureTemperature()
@@ -141,12 +180,24 @@ float cNPM1300::measureTemperature()
 
     this->readRegister(Register::AdcTempResultMsb, tempMsb);
     this->readRegister(Register::AdcGpResultLsbs_0, tempLsb);
-    // We need only data from bit 5 and 4
-    tempLsb = (tempLsb & 0x30) >> 4;
-    // Get the 10 bit ADC result
+    // ADCGP0RESULTLSBS field C (bits 5:4) holds the die-temperature
+    // measurement's LSBs. See datasheet section 7.1.10.18,
+    // ADCGP0RESULTLSBS.
+    constexpr uint8_t kTempLsbMask = 0x30;
+    constexpr uint8_t kTempLsbShift = 4;
+    tempLsb = (tempLsb & kTempLsbMask) >> kTempLsbShift;
+
+    // Combine the 8-bit MSB and 2-bit LSB into the full 10-bit ADC
+    // result. See datasheet section 7.1.4, Table 28 "Measurement
+    // results".
     uint16_t result = (tempMsb << 2) | tempLsb;
 
-    return 394.67 - (0.7926 * result);
+    // Die temperature (deg C) = kDieTempIntercept - kDieTempSlope * ADC
+    // result. See datasheet section 7.1.4, "Die temperature in C"
+    // equation, variable KDIETEMP.
+    constexpr float kDieTempIntercept = 394.67f;
+    constexpr float kDieTempSlope = 0.7926f;
+    return kDieTempIntercept - (kDieTempSlope * result);
     }
 
 bool cNPM1300::getVbusStatus(uint8_t &status)
@@ -197,8 +248,12 @@ bool cNPM1300::setBuckVoltage_1(cNPM1300::Voltage voltage)
     {
     bool result;
     result = this->writeRegister(Register::BuckNormVout_1, (uint8_t)voltage);
-    // enable bit 0 to override the voltage selection
-    this->writeRegister(Register::BuckSwCtrlSel, 0x01);
+
+    // BUCKSWCTRLSEL field A (BUCK1SWCTRLSEL, bit 0): 1 = let software
+    // override the VSET pin and use the value just written to
+    // BuckNormVout_1. See datasheet section 6.3.8.16, BUCKSWCTRLSEL.
+    constexpr uint8_t kBuck1SwCtrlSelBit = 0x01;
+    this->writeRegister(Register::BuckSwCtrlSel, kBuck1SwCtrlSelBit);
 
     return result;
     }
@@ -207,8 +262,12 @@ bool cNPM1300::setBuckVoltage_2(cNPM1300::Voltage voltage)
     {
     bool result;
     result = this->writeRegister(Register::BuckNormVout_2, (uint8_t)voltage);
-    // enable bit 1 to override the voltage selection
-    this->writeRegister(Register::BuckSwCtrlSel, 0x02);
+
+    // BUCKSWCTRLSEL field B (BUCK2SWCTRLSEL, bit 1): 1 = let software
+    // override the VSET pin and use the value just written to
+    // BuckNormVout_2. See datasheet section 6.3.8.16, BUCKSWCTRLSEL.
+    constexpr uint8_t kBuck2SwCtrlSelBit = 0x02;
+    this->writeRegister(Register::BuckSwCtrlSel, kBuck2SwCtrlSelBit);
 
     return result;
     }
@@ -419,8 +478,12 @@ bool cNPM1300::getVbusComparatorStatus(uint8_t &status)
 bool cNPM1300::chargerOn()
     {
     bool result_1, result_2;
-    // enable bit 1
-    result_1 = this->writeRegister(Register::BChgDisableSet, 0x02);
+
+    // BCHGDISABLESET field B (DISABLENTC, bit 1): set to make the
+    // charger ignore the NTC thermistor's temperature limits. See
+    // datasheet section 6.2.14.6, BCHGDISABLESET.
+    constexpr uint8_t kBChgDisableNtcBit = 0x02;
+    result_1 = this->writeRegister(Register::BChgDisableSet, kBChgDisableNtcBit);
     result_2 = this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger);
 
     return (result_1 && result_2);
@@ -431,8 +494,11 @@ bool cNPM1300::ignoreNtc(bool ignore)
     bool result;
     if (ignore)
         {
-        // enable bit 1
-        result = this->writeRegister(Register::BChgDisableSet, 0x02);
+        // BCHGDISABLESET field B (DISABLENTC, bit 1): set to make the
+        // charger ignore the NTC thermistor's temperature limits. See
+        // datasheet section 6.2.14.6, BCHGDISABLESET.
+        constexpr uint8_t kBChgDisableNtcBit = 0x02;
+        result = this->writeRegister(Register::BChgDisableSet, kBChgDisableNtcBit);
         }
     else
         {
@@ -668,8 +734,12 @@ bool cNPM1300::setLoadSwitchGpioControl_1(uint8_t gpioNumber, bool invert)
         return false;
         }
 
-    // Construct the value to write to the register
-    std::uint8_t value = (gpioNumber & 0x07) | (invert ? 0x08 : 0x00);
+    // LDSW1GPISEL field A (LDSW1GPISEL, bits 2:0): which GPI controls
+    // Load Switch 1. Field B (LDSW1GPIINV, bit 3): invert the sense of
+    // that GPIO. See datasheet section 6.4.3.6, LDSW1GPISEL.
+    constexpr uint8_t kLdswGpiSelMask = 0x07;
+    constexpr uint8_t kLdswGpiInvertBit = 0x08;
+    std::uint8_t value = (gpioNumber & kLdswGpiSelMask) | (invert ? kLdswGpiInvertBit : 0x00);
 
     return this->writeRegister(Register::LdswGpiSel_1, value);
     }
@@ -682,8 +752,12 @@ bool cNPM1300::setLoadSwitchGpioControl_2(uint8_t gpioNumber, bool invert)
         return false;
         }
 
-    // Construct the value to write to the register
-    std::uint8_t value = (gpioNumber & 0x07) | (invert ? 0x08 : 0x00);
+    // LDSW2GPISEL field A (LDSW2GPISEL, bits 2:0): which GPI controls
+    // Load Switch 2. Field B (LDSW2GPIINV, bit 3): invert the sense of
+    // that GPIO. See datasheet section 6.4.3.7, LDSW2GPISEL.
+    constexpr uint8_t kLdswGpiSelMask = 0x07;
+    constexpr uint8_t kLdswGpiInvertBit = 0x08;
+    std::uint8_t value = (gpioNumber & kLdswGpiSelMask) | (invert ? kLdswGpiInvertBit : 0x00);
 
     return this->writeRegister(Register::LdswGpiSel_2, value);
     }
@@ -710,26 +784,29 @@ bool cNPM1300::setBuckGpioControl(uint8_t buckNumber, uint8_t gpioNumber, bool i
         return false;
         }
 
+    // BUCKENCTRL fields (see datasheet section 6.3.8.13, BUCKENCTRL):
+    // A = BUCK1ENGPISEL (bits 2:0), B = BUCK2ENGPISEL (bits 5:3),
+    // C = BUCK1ENGPIINV (bit 6), D = BUCK2ENGPIINV (bit 7).
+    constexpr uint8_t kBuck1GpiSelMask = 0x07;
+    constexpr uint8_t kBuck1GpiInvertBit = 0x40;
+    constexpr uint8_t kBuck2GpiSelShift = 3;
+    constexpr uint8_t kBuck2GpiSelMask = 0x07 << kBuck2GpiSelShift;
+    constexpr uint8_t kBuck2GpiInvertBit = 0x80;
+
     // Construct the new value based on the buck number
     if (buckNumber == 1)
         {
-        // Clear and set BUCK1ENGPISEL (Bits 2:0) and BUCK1ENGPIINV (Bit 6)
-        // Clear bits 2:0 and 6
-        regValue &= ~0x47;
-        // Set BUCK1ENGPISEL
-        regValue |= (gpioNumber & 0x07);
-        // Set BUCK1ENGPIINV
-        regValue |= (invert ? 0x40 : 0x00);
+        // Clear and set BUCK1ENGPISEL and BUCK1ENGPIINV
+        regValue &= ~(kBuck1GpiSelMask | kBuck1GpiInvertBit);
+        regValue |= (gpioNumber & kBuck1GpiSelMask);
+        regValue |= (invert ? kBuck1GpiInvertBit : 0x00);
         }
     else if (buckNumber == 2)
         {
-        // Clear and set BUCK2ENGPISEL (Bits 5:3) and BUCK2ENGPIINV (Bit 7)
-        // Clear bits 5:3 and 7
-        regValue &= ~0xB8;
-        // Set BUCK2ENGPISEL
-        regValue |= ((gpioNumber & 0x07) << 3);
-        // Set BUCK2ENGPIINV
-        regValue |= (invert ? 0x80 : 0x00);
+        // Clear and set BUCK2ENGPISEL and BUCK2ENGPIINV
+        regValue &= ~(kBuck2GpiSelMask | kBuck2GpiInvertBit);
+        regValue |= ((gpioNumber & 0x07) << kBuck2GpiSelShift);
+        regValue |= (invert ? kBuck2GpiInvertBit : 0x00);
         }
 
     // Write the updated value back to the register
