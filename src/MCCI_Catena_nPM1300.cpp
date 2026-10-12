@@ -813,7 +813,7 @@ bool cNPM1300::setBuckGpioControl(uint8_t buckNumber, uint8_t gpioNumber, bool i
         {
         // Clear and set BUCK2ENGPISEL and BUCK2ENGPIINV
         regValue &= ~(kBuck2GpiSelMask | kBuck2GpiInvertBit);
-        regValue |= ((gpioNumber & 0x07) << kBuck2GpiSelShift);
+        regValue |= ((gpioNumber << kBuck2GpiSelShift) & kBuck2GpiSelMask);
         regValue |= (invert ? kBuck2GpiInvertBit : 0x00);
         }
 
