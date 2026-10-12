@@ -1119,11 +1119,11 @@ protected:
         }
 
 private:
-    TwoWire *m_wire;                                        ///< pointer to bus to be used for this device
-    std::uint32_t m_tReady;                                 ///< estimated time next measurement will be ready (millis)
-    Address m_address;                                      ///< I2C address to be used
-    Pin_t m_pinReady;                                       ///< alert pin, or -1 if none.
-    Error m_lastError;                                      ///< last error.
+    TwoWire *m_wire {nullptr};                              ///< pointer to bus to be used for this device
+    std::uint32_t m_tReady {0};                             ///< estimated time next measurement will be ready (millis)
+    Address m_address {Address::NPM1300};                   ///< I2C address to be used
+    Pin_t m_pinReady {-1};                                  ///< alert pin, or -1 if none.
+    Error m_lastError {Error::Success};                     ///< last error.
     State m_state                                           ///< current state
         { State::Uninitialized };                           ///< initially not yet started.
     bool ledState[3] = {false};                             ///< LEDDRV state
