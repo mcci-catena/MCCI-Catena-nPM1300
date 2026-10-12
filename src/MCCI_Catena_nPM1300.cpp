@@ -246,30 +246,38 @@ bool cNPM1300::setBuck_2(bool state)
 
 bool cNPM1300::setBuckVoltage_1(cNPM1300::Voltage voltage)
     {
-    bool result;
-    result = this->writeRegister(Register::BuckNormVout_1, (uint8_t)voltage);
+    if (! this->writeRegister(Register::BuckNormVout_1, (uint8_t)voltage))
+        return false;
 
     // BUCKSWCTRLSEL field A (BUCK1SWCTRLSEL, bit 0): 1 = let software
     // override the VSET pin and use the value just written to
     // BuckNormVout_1. See datasheet section 6.3.8.16, BUCKSWCTRLSEL.
+    // Read the register and set only this bit, so that we don't
+    // clear the other buck's bit and send it back to its VSET voltage.
     constexpr uint8_t kBuck1SwCtrlSelBit = 0x01;
-    this->writeRegister(Register::BuckSwCtrlSel, kBuck1SwCtrlSelBit);
+    uint8_t swCtrlSel;
+    if (! this->readRegister(Register::BuckSwCtrlSel, swCtrlSel))
+        return false;
 
-    return result;
+    return this->writeRegister(Register::BuckSwCtrlSel, swCtrlSel | kBuck1SwCtrlSelBit);
     }
 
 bool cNPM1300::setBuckVoltage_2(cNPM1300::Voltage voltage)
     {
-    bool result;
-    result = this->writeRegister(Register::BuckNormVout_2, (uint8_t)voltage);
+    if (! this->writeRegister(Register::BuckNormVout_2, (uint8_t)voltage))
+        return false;
 
     // BUCKSWCTRLSEL field B (BUCK2SWCTRLSEL, bit 1): 1 = let software
     // override the VSET pin and use the value just written to
     // BuckNormVout_2. See datasheet section 6.3.8.16, BUCKSWCTRLSEL.
+    // Read the register and set only this bit, so that we don't
+    // clear the other buck's bit and send it back to its VSET voltage.
     constexpr uint8_t kBuck2SwCtrlSelBit = 0x02;
-    this->writeRegister(Register::BuckSwCtrlSel, kBuck2SwCtrlSelBit);
+    uint8_t swCtrlSel;
+    if (! this->readRegister(Register::BuckSwCtrlSel, swCtrlSel))
+        return false;
 
-    return result;
+    return this->writeRegister(Register::BuckSwCtrlSel, swCtrlSel | kBuck2SwCtrlSelBit);
     }
 
 bool cNPM1300::selectLdoLoadSwitchMode_1(bool mode)
