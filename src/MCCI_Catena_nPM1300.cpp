@@ -43,11 +43,18 @@ bool cNPM1300::begin()
         }
 
     this->m_wire->begin();
-    this->setState(State::Initial);
 
-    // it will return Buck 1 and Buck 2 status
-    bool result = this->getBuckStatus();
-    return result;
+    // probe the chip by reading the Buck 1/Buck 2 status register; only
+    // declare the driver running if the chip actually answers. Do not
+    // set State::Initial until we know the probe succeeded, so a failed
+    // begin() leaves isRunning() false and a later begin() retries for
+    // real instead of taking the early return above.
+    uint8_t buckStatus;
+    if (! this->getBuckStatus(buckStatus))
+        return false;
+
+    this->setState(State::Initial);
+    return true;
     }
 
 void cNPM1300::end()
@@ -139,20 +146,14 @@ float cNPM1300::measureTemperature()
     return 394.67 - (0.7926 * result);
     }
 
-uint8_t cNPM1300::getVbusStatus()
+bool cNPM1300::getVbusStatus(uint8_t &status)
     {
-    uint8_t vBusStatus;
-
-    this->readRegister(Register::VbusInStatus, vBusStatus);
-    return vBusStatus;
+    return this->readRegister(Register::VbusInStatus, status);
     }
 
-uint8_t cNPM1300::getBuckStatus()
+bool cNPM1300::getBuckStatus(uint8_t &status)
     {
-    uint8_t vBuckStatus;
-
-    this->readRegister(Register::BuckStatus, vBuckStatus);
-    return vBuckStatus;
+    return this->readRegister(Register::BuckStatus, status);
     }
 
 bool cNPM1300::setBuck_1(bool state)
@@ -381,11 +382,9 @@ bool cNPM1300::setInCurrentLimitVbus(cNPM1300::Current limit)
     return result;
     }
 
-uint8_t cNPM1300::readInCurrentLimitVbus()
+bool cNPM1300::readInCurrentLimitVbus(uint8_t &limit)
     {
-    uint8_t inLimitVbus;
-    this->readRegister(Register::VbusInILim_0, inLimitVbus);
-    return inLimitVbus;
+    return this->readRegister(Register::VbusInILim_0, limit);
     }
 
 bool cNPM1300::setStartupInCurrentLimitVbus(cNPM1300::Current limit)
@@ -396,11 +395,9 @@ bool cNPM1300::setStartupInCurrentLimitVbus(cNPM1300::Current limit)
     return result;
     }
 
-uint8_t cNPM1300::readStartupInCurrentLimitVbus()
+bool cNPM1300::readStartupInCurrentLimitVbus(uint8_t &limit)
     {
-    uint8_t startupLimVbus;
-    this->readRegister(Register::VbusInILimStartup, startupLimVbus);
-    return startupLimVbus;
+    return this->readRegister(Register::VbusInILimStartup, limit);
     }
 
 bool cNPM1300::suspendVbus(bool mode)
@@ -411,11 +408,9 @@ bool cNPM1300::suspendVbus(bool mode)
     return result;
     }
 
-uint8_t cNPM1300::getVbusComparatorStatus()
+bool cNPM1300::getVbusComparatorStatus(uint8_t &status)
     {
-    uint8_t vBusComparatorStatus;
-    this->readRegister(Register::UsbCDetectStatus, vBusComparatorStatus);
-    return vBusComparatorStatus;
+    return this->readRegister(Register::UsbCDetectStatus, status);
     }
 
 bool cNPM1300::chargerOn()
@@ -467,12 +462,9 @@ bool cNPM1300::chargerOff()
     return result;
     }
 
-uint8_t cNPM1300::getVterm()
+bool cNPM1300::getVterm(uint8_t &vTerm)
     {
-    uint8_t vTerm;
-    this->readRegister(Register::BChgVTerm, vTerm);
-
-    return vTerm;
+    return this->readRegister(Register::BChgVTerm, vTerm);
     }
 
 bool cNPM1300::setVterm(cNPM1300::Vterm vTerm)
@@ -486,28 +478,19 @@ bool cNPM1300::setVterm(cNPM1300::Vterm vTerm)
     return (result_1 && result_2);
     }
 
-uint8_t cNPM1300::getChargeStatus()
+bool cNPM1300::getChargeStatus(uint8_t &status)
     {
-    uint8_t status;
-    this->readRegister(Register::BChgChargeStatus, status);
-
-    return status;
+    return this->readRegister(Register::BChgChargeStatus, status);
     }
 
-uint8_t cNPM1300::getErrorReason()
+bool cNPM1300::getErrorReason(uint8_t &reason)
     {
-    uint8_t errReason;
-    this->readRegister(Register::BChgErrReason, errReason);
-
-    return errReason;
+    return this->readRegister(Register::BChgErrReason, reason);
     }
 
-uint8_t cNPM1300::getErrorSensor()
+bool cNPM1300::getErrorSensor(uint8_t &sensor)
     {
-    uint8_t errSensor;
-    this->readRegister(Register::BChgErrSensor, errSensor);
-
-    return errSensor;
+    return this->readRegister(Register::BChgErrSensor, sensor);
     }
 
 bool cNPM1300::setChargeCurrent(uint16_t limit)
@@ -669,12 +652,9 @@ bool cNPM1300::setGpioDebounce(bool enable, uint8_t gpioNumber)
     return result;
     }
 
-uint8_t cNPM1300::getGpioStatus()
+bool cNPM1300::getGpioStatus(uint8_t &status)
     {
-    uint8_t gpioStatus;
-    this->readRegister(Register::GpioStatus, gpioStatus);
-
-    return gpioStatus;
+    return this->readRegister(Register::GpioStatus, status);
     }
 
 bool cNPM1300::setLoadSwitchGpioControl_1(uint8_t gpioNumber, bool invert)
@@ -766,7 +746,7 @@ bool cNPM1300::readRegisters(cNPM1300::Register reg, std::uint8_t *pBuffer, size
     if (pBuffer == nullptr || nBuffer > 32)
         return this->setLastError(Error::InternalInvalidParameter);
 
-    this->m_wire->beginTransmission((uint8_t) Address::NPM1300);
+    this->m_wire->beginTransmission((uint8_t) this->m_address);
     if (this->m_wire->write((uint8_t)((uint16_t)reg >> 8)) != 1 || this->m_wire->write((uint8_t)((uint16_t)reg & 0xFF)) != 1)
         {
         return this->setLastError(Error::I2cReadRequest);
@@ -776,7 +756,7 @@ bool cNPM1300::readRegisters(cNPM1300::Register reg, std::uint8_t *pBuffer, size
         return this->setLastError(Error::I2cReadRequest);
         }
 
-    auto nReadFrom = this->m_wire->requestFrom((uint8_t) Address::NPM1300, std::uint8_t(nBuffer));
+    auto nReadFrom = this->m_wire->requestFrom((uint8_t) this->m_address, std::uint8_t(nBuffer));
 
     if (nReadFrom != nBuffer)
         return this->setLastError(Error::I2cReadRequest);
@@ -803,7 +783,7 @@ bool cNPM1300::writeRegister(cNPM1300::Register reg, std::uint8_t value)
         value
         };
 
-    this->m_wire->beginTransmission((uint8_t) Address::NPM1300);
+    this->m_wire->beginTransmission((uint8_t) this->m_address);
 
     if (this->m_wire->write(cmdbuf, sizeof(cmdbuf)) != sizeof(cmdbuf))
         return this->setLastError(Error::I2cWriteBufferFailed);

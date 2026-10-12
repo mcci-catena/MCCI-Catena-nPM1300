@@ -599,10 +599,26 @@ public:
     float measureTemperature();
 
     /// \brief get the status of Vbus
-    uint8_t getVbusStatus();
+    ///
+    /// \param [out] status is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p status is
+    ///     unchanged on failure.
+    ///
+    bool getVbusStatus(uint8_t &status);
 
     /// \brief get the status of Buck
-    uint8_t getBuckStatus();
+    ///
+    /// \param [out] status is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p status is
+    ///     unchanged on failure.
+    ///
+    bool getBuckStatus(uint8_t &status);
 
     /// \brief enable or disable the Buck 1
     ///
@@ -787,7 +803,15 @@ public:
     bool setInCurrentLimitVbus(cNPM1300::Current limit);
 
     /// \brief read the Vbus limit current
-    uint8_t readInCurrentLimitVbus();
+    ///
+    /// \param [out] limit is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p limit is
+    ///     unchanged on failure.
+    ///
+    bool readInCurrentLimitVbus(uint8_t &limit);
 
     /// \brief set the input current linit for Vbus
     ///
@@ -800,7 +824,15 @@ public:
     bool setStartupInCurrentLimitVbus(cNPM1300::Current limit);
 
     /// \brief read the Vbus startup current
-    uint8_t readStartupInCurrentLimitVbus();
+    ///
+    /// \param [out] limit is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p limit is
+    ///     unchanged on failure.
+    ///
+    bool readStartupInCurrentLimitVbus(uint8_t &limit);
 
     /// \brief set the suspend mode for Vbus
     ///
@@ -812,8 +844,16 @@ public:
     ///
     bool suspendVbus(bool mode);
 
-    /// \brief set the suspend mode for Vbus
-    uint8_t getVbusComparatorStatus();
+    /// \brief get the Vbus comparator status
+    ///
+    /// \param [out] status is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p status is
+    ///     unchanged on failure.
+    ///
+    bool getVbusComparatorStatus(uint8_t &status);
 
     /// \brief turn on the charger
     bool chargerOn();
@@ -842,7 +882,15 @@ public:
     bool chargerOff();
 
     /// \brief get the battery charger normal termination voltage
-    uint8_t getVterm();
+    ///
+    /// \param [out] vTerm is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p vTerm is
+    ///     unchanged on failure.
+    ///
+    bool getVterm(uint8_t &vTerm);
 
     /// \brief set the battery charger normal termination voltage
     ///
@@ -855,13 +903,37 @@ public:
     bool setVterm(cNPM1300::Vterm vTerm);
 
     /// \brief get the battery charging status
-    uint8_t getChargeStatus();
+    ///
+    /// \param [out] status is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p status is
+    ///     unchanged on failure.
+    ///
+    bool getChargeStatus(uint8_t &status);
 
     /// \brief get the charger error reason
-    uint8_t getErrorReason();
+    ///
+    /// \param [out] reason is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p reason is
+    ///     unchanged on failure.
+    ///
+    bool getErrorReason(uint8_t &reason);
 
     /// \brief get the charger error reason for external sensor
-    uint8_t getErrorSensor();
+    ///
+    /// \param [out] sensor is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p sensor is
+    ///     unchanged on failure.
+    ///
+    bool getErrorSensor(uint8_t &sensor);
 
     /// \brief set charger current limit
     ///
@@ -940,7 +1012,15 @@ public:
     bool setGpioDebounce(bool enable, uint8_t gpioNumber);
 
     /// \brief get GPIO status
-    uint8_t getGpioStatus();
+    ///
+    /// \param [out] status is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p status is
+    ///     unchanged on failure.
+    ///
+    bool getGpioStatus(uint8_t &status);
 
     /// \brief set load switch 1 GPIO control
     ///
