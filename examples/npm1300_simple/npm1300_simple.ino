@@ -82,9 +82,17 @@ void loop()
     Serial.print("Bus Voltage: ");
     Serial.println(vBus);
 
-    uint8_t vBusStatus = gNpm1300.getVbusStatus();
-    Serial.print("Bus Voltage: ");
-    Serial.println(vBusStatus);
+    uint8_t vBusStatus;
+    if (gNpm1300.getVbusStatus(vBusStatus))
+        {
+        Serial.print("Bus Status: ");
+        Serial.println(vBusStatus);
+        }
+    else
+        {
+        Serial.print("getVbusStatus() failed: ");
+        Serial.println(gNpm1300.getLastErrorName());
+        }
 
     Serial.println();
     Serial.println("##################################");

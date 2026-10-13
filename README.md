@@ -39,14 +39,15 @@ Add the library to your sketch:
 #include <Wire.h>
 #include <MCCI_Catena_nPM1300.h>
 
-McciCatenaNpm1300::cNPM1300 npm1300;
+McciCatenaNpm1300::cNPM1300 npm1300 {Wire};
 
 void setup() {
     Wire.begin();
     if (npm1300.begin()) {
         Serial.println("nPM1300 initialized successfully.");
     } else {
-        Serial.println("Failed to initialize nPM1300.");
+        Serial.print("Failed to initialize nPM1300: ");
+        Serial.println(npm1300.getLastErrorName());
     }
 }
 
@@ -67,12 +68,15 @@ void loop() {
 - **`float measureVbus()`**: Measure input voltage.
 - **`float measureVsys()`**: Measure system voltage.
 - **`float measureTemperature()`**: Measure die temperature.
+- **`bool getVbusStatus(uint8_t &status)`**: Get the Vbus status register. Returns `false` (and leaves `status` unchanged) if the read fails.
+- **`bool getVbusComparatorStatus(uint8_t &status)`**: Get the Vbus comparator status register. Returns `false` (and leaves `status` unchanged) if the read fails.
 
 ### Voltage Regulators
 - **`bool setBuck_1(bool state)`**: Enable or disable Buck 1.
 - **`bool setBuck_2(bool state)`**: Enable or disable Buck 2.
 - **`bool setBuckVoltage_1(Voltage voltage)`**: Set output voltage for Buck 1.
 - **`bool setBuckVoltage_2(Voltage voltage)`**: Set output voltage for Buck 2.
+- **`bool getBuckStatus(uint8_t &status)`**: Get the Buck 1/Buck 2 enable status register. Returns `false` (and leaves `status` unchanged) if the read fails.
 
 ### Load Switch and LDO
 - **`bool setLoadSwitch_1(bool state)`**: Control Load Switch 1.
@@ -95,7 +99,7 @@ void loop() {
 - **`bool setGpioPullDown(bool enable, uint8_t gpioNumber)`**: Enable or disable pull-down resistor for GPIO.
 - **`bool setGpioOpenDrain(bool enable, uint8_t gpioNumber)`**: Enable or disable open-drain mode for GPIO.
 - **`bool setGpioDebounce(bool enable, uint8_t gpioNumber)`**: Enable or disable debounce for GPIO.
-- **`uint8_t getGpioStatus()`**: Retrieve the current status of GPIOs.
+- **`bool getGpioStatus(uint8_t &status)`**: Retrieve the current status of GPIOs. Returns `false` (and leaves `status` unchanged) if the read fails.
 
 ### Buck Regulator GPIO Control
 - **`bool setBuckGpioControl(uint8_t buckNumber, uint8_t gpioNumber, bool invert)`**: Configure GPIO for Buck regulator control.
@@ -107,10 +111,19 @@ void loop() {
 ### Battery Charger
 - **`bool chargerOn()`**: Enable the charger.
 - **`bool chargerOff()`**: Disable the charger.
-- **`bool setChargeCurrent(uint16_t limit)`**: Set charge current (32-800 mA).
-- **`uint8_t getChargeStatus()`**: Get the charging status.
-- **`uint8_t getErrorReason()`**: Retrieve the last error reason.
-- **`uint8_t getErrorSensor()`**: Retrieve error related to external sensor.
+- **`bool ignoreNtc(bool ignore)`**: Ignore (or use) the NTC thermistor's temperature limits. Set `true` if no NTC thermistor is connected.
+- **`bool enableRecharge(bool enable)`**: Enable or disable recharging of the battery once charged.
+- **`bool setChargeCurrent(uint16_t limit)`**: Set charge current (32-800 mA, in 2 mA steps).
+- **`bool getVterm(uint8_t &vTerm)`**: Get the battery charger's normal termination voltage. Returns `false` (and leaves `vTerm` unchanged) if the read fails.
+- **`bool setVterm(Vterm vTerm)`**: Set the battery charger's normal termination voltage.
+- **`bool getChargeStatus(uint8_t &status)`**: Get the charging status. Returns `false` (and leaves `status` unchanged) if the read fails.
+- **`bool getErrorReason(uint8_t &reason)`**: Retrieve the last charger error reason. Returns `false` (and leaves `reason` unchanged) if the read fails.
+- **`bool getErrorSensor(uint8_t &sensor)`**: Retrieve the last charger error related to an external sensor. Returns `false` (and leaves `sensor` unchanged) if the read fails.
+- **`bool suspendVbus(bool mode)`**: Suspend or resume drawing current from Vbus.
+- **`bool setInCurrentLimitVbus(Current limit)`**: Set the Vbus input current limit.
+- **`bool readInCurrentLimitVbus(uint8_t &limit)`**: Read back the Vbus input current limit. Returns `false` (and leaves `limit` unchanged) if the read fails.
+- **`bool setStartupInCurrentLimitVbus(Current limit)`**: Set the Vbus startup input current limit.
+- **`bool readStartupInCurrentLimitVbus(uint8_t &limit)`**: Read back the Vbus startup input current limit. Returns `false` (and leaves `limit` unchanged) if the read fails.
 
 ### Error Handling
 - **`Error getLastError()`**: Retrieve the last error code.
@@ -123,14 +136,15 @@ void loop() {
 #include <Wire.h>
 #include <MCCI_Catena_nPM1300.h>
 
-McciCatenaNpm1300::cNPM1300 npm1300;
+McciCatenaNpm1300::cNPM1300 npm1300 {Wire};
 
 void setup() {
     Wire.begin();
     Serial.begin(9600);
 
     if (!npm1300.begin()) {
-        Serial.println("Failed to initialize nPM1300!");
+        Serial.print("Failed to initialize nPM1300: ");
+        Serial.println(npm1300.getLastErrorName());
         while (true);
     }
 
