@@ -588,16 +588,49 @@ public:
         }
 
     /// \brief measure Vbat
-    float measureVbat();
+    ///
+    /// \param [out] v is set to the battery voltage, in volts, on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureVbat(float &voltage);
 
     /// \brief measure Vbus
-    float measureVbus();
+    ///
+    /// \param [out] v is set to the bus voltage, in volts, on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureVbus(float &voltage);
 
     /// \brief measure Vsys
-    float measureVsys();
+    ///
+    /// \param [out] v is set to the system voltage, in volts, on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureVsys(float &voltage);
 
     /// \brief measure die Temperature
-    float measureTemperature();
+    ///
+    /// \param [out] t is set to the die temperature, in degrees C, on
+    ///     success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureTemperature(float &temperature);
 
     /// \brief get the status of Vbus
     ///
@@ -1099,6 +1132,21 @@ protected:
     ///     last error is set in case of error.
     ///
     bool writeRegister(cNPM1300::Register reg, std::uint8_t value);
+
+    ///
+    /// \brief wait for an ADC conversion to finish.
+    ///
+    /// \param [in] eventBit selects the EVENTADC*RDY bit (in
+    ///     EVENTSADCSET / EVENTSADCCLR) for the conversion that was just
+    ///     triggered; see datasheet section 7.7.1.2.
+    ///
+    /// \return
+    ///     \c true once the bit is set (and it's been cleared again, so
+    ///     the next conversion starts clean); \c false on an I2C error,
+    ///     or if the bit doesn't get set within a generous timeout, in
+    ///     which case Error::NotMeasuring is set as the last error.
+    ///
+    bool waitForAdcReady(std::uint8_t eventBit);
 
     ///
     /// \brief Make sure the driver is running

@@ -64,10 +64,10 @@ void loop() {
 - **`bool reset()`**: Perform a soft reset on the nPM1300.
 
 ### Voltage and Current Measurement
-- **`float measureVbat()`**: Measure battery voltage.
-- **`float measureVbus()`**: Measure input voltage.
-- **`float measureVsys()`**: Measure system voltage.
-- **`float measureTemperature()`**: Measure die temperature.
+- **`bool measureVbat(float &v)`**: Measure battery voltage. Returns `false` (and leaves `v` unchanged) if the conversion times out or the read fails.
+- **`bool measureVbus(float &v)`**: Measure input voltage. Returns `false` (and leaves `v` unchanged) if the conversion times out or the read fails.
+- **`bool measureVsys(float &v)`**: Measure system voltage. Returns `false` (and leaves `v` unchanged) if the conversion times out or the read fails.
+- **`bool measureTemperature(float &t)`**: Measure die temperature. Returns `false` (and leaves `t` unchanged) if the conversion times out or the read fails.
 - **`bool getVbusStatus(uint8_t &status)`**: Get the Vbus status register. Returns `false` (and leaves `status` unchanged) if the read fails.
 - **`bool getVbusComparatorStatus(uint8_t &status)`**: Get the Vbus comparator status register. Returns `false` (and leaves `status` unchanged) if the read fails.
 
@@ -148,9 +148,14 @@ void setup() {
         while (true);
     }
 
-    float vbat = npm1300.measureVbat();
-    Serial.print("Battery Voltage: ");
-    Serial.println(vbat, 2);
+    float vbat;
+    if (npm1300.measureVbat(vbat)) {
+        Serial.print("Battery Voltage: ");
+        Serial.println(vbat, 2);
+    } else {
+        Serial.print("measureVbat() failed: ");
+        Serial.println(npm1300.getLastErrorName());
+    }
 
     if (npm1300.ledToggle(McciCatenaNpm1300::cNPM1300::Led::LED_0)) {
         Serial.println("LED toggled successfully.");
