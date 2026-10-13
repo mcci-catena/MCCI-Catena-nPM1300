@@ -485,16 +485,12 @@ bool cNPM1300::getVbusComparatorStatus(uint8_t &status)
 
 bool cNPM1300::chargerOn()
     {
-    bool result_1, result_2;
-
-    // BCHGDISABLESET field B (DISABLENTC, bit 1): set to make the
-    // charger ignore the NTC thermistor's temperature limits. See
-    // datasheet section 6.2.14.6, BCHGDISABLESET.
-    constexpr uint8_t kBChgDisableNtcBit = 0x02;
-    result_1 = this->writeRegister(Register::BChgDisableSet, kBChgDisableNtcBit);
-    result_2 = this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger);
-
-    return (result_1 && result_2);
+    // Starts the charger only. Whether the NTC thermistor's temperature
+    // limits apply is the caller's choice, made through ignoreNtc() --
+    // not something chargerOn() should decide. A board with no NTC
+    // thermistor fitted must call ignoreNtc(true) first, or the charger
+    // will refuse to charge.
+    return this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger);
     }
 
 bool cNPM1300::ignoreNtc(bool ignore)

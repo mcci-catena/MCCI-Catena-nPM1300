@@ -857,6 +857,10 @@ public:
     bool getVbusComparatorStatus(uint8_t &status);
 
     /// \brief turn on the charger
+    ///
+    /// Does not touch the NTC temperature limits -- call ignoreNtc(true)
+    /// first if no NTC thermistor is fitted, or the charger will refuse
+    /// to charge.
     bool chargerOn();
 
     /// \brief ignore the NTC thermistor (if it is not used)
