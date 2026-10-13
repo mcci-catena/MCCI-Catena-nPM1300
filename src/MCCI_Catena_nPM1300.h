@@ -65,7 +65,7 @@ getLocal(std::uint32_t v)
     }
 
 /// \brief version of library, for use by clients in static_asserts
-static constexpr std::uint32_t kVersion = makeVersion(1,1,0,0);
+static constexpr std::uint32_t kVersion = makeVersion(1,2,0,0);
 
 /// \brief instance object for nPm 1300 IC
 class cNPM1300
