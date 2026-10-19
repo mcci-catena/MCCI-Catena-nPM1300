@@ -28,8 +28,10 @@ cNPM1300::~cNPM1300()
     {
     }
 
-bool cNPM1300::begin()
+bool cNPM1300::begin(Ntc ntc)
     {
+    this->m_ntc = ntc;
+
     // if no Wire is bound, fail.
     if (this->m_wire == nullptr)
         {
@@ -54,7 +56,10 @@ bool cNPM1300::begin()
         return false;
 
     this->setState(State::Initial);
-    return true;
+
+    // a board with no thermistor must have the NTC limits ignored before
+    // anyone turns the charger on.
+    return this->applyNtc();
     }
 
 void cNPM1300::end()
@@ -78,15 +83,47 @@ bool cNPM1300::reset()
         }
     }
 
-float cNPM1300::measureVbat()
+// protected
+bool cNPM1300::waitForAdcReady(std::uint8_t eventBit)
     {
+    // tCONV (ADC conversion time) is 250us typical (datasheet section
+    // 7.1.9, Table 29). This timeout is a generous margin over that,
+    // not a tight bound: each poll is an I2C transfer in its own right,
+    // so the loop below settles as soon as the bit is actually set.
+    constexpr std::uint32_t kTimeoutMs = 10;
+
+    const std::uint32_t tStart = millis();
+    std::uint8_t status;
+
+    do  {
+        if (! this->readRegister(Register::EventsAdcSet, status))
+            return false;
+
+        if (status & eventBit)
+            {
+            // clear the event so the next conversion starts clean.
+            return this->writeRegister(Register::EventsAdcClr, eventBit);
+            }
+        } while (std::uint32_t(millis() - tStart) < kTimeoutMs);
+
+    return this->setLastError(Error::NotMeasuring);
+    }
+
+bool cNPM1300::measureVbat(float &voltage)
+    {
+    // EVENTADCVBATRDY: EVENTSADCSET/EVENTSADCCLR field A (bit 0). See
+    // datasheet section 7.7.1.2.
+    constexpr std::uint8_t kVbatReadyBit = 0x01;
+
     uint8_t vBatMsb;
     uint8_t vBatLsb;
 
-    this->writeRegister(Register::TaskVbatMeasure, (uint8_t)Command::Trigger);
+    if (! (this->writeRegister(Register::TaskVbatMeasure, (uint8_t)Command::Trigger) &&
+           this->waitForAdcReady(kVbatReadyBit) &&
+           this->readRegister(Register::AdcVbatResultMsb, vBatMsb) &&
+           this->readRegister(Register::AdcGpResultLsbs_0, vBatLsb)))
+        return false;
 
-    this->readRegister(Register::AdcVbatResultMsb, vBatMsb);
-    this->readRegister(Register::AdcGpResultLsbs_0, vBatLsb);
     // ADCGP0RESULTLSBS field A (bits 1:0) holds the VBAT measurement's
     // LSBs. See datasheet section 7.1.10.18, ADCGP0RESULTLSBS.
     constexpr uint8_t kVbatLsbMask = 0x03;
@@ -104,18 +141,25 @@ float cNPM1300::measureVbat()
     // symbol VFSVBAT.
     constexpr float kAdcMaxCode10Bit = 1023.0f;
     constexpr float kVfsVbat = 5.0f;
-    return (result / kAdcMaxCode10Bit) * kVfsVbat;
+    voltage = (result / kAdcMaxCode10Bit) * kVfsVbat;
+    return true;
     }
 
-float cNPM1300::measureVbus()
+bool cNPM1300::measureVbus(float &voltage)
     {
+    // EVENTADCVBUS7V0RDY: EVENTSADCSET/EVENTSADCCLR field H (bit 7). See
+    // datasheet section 7.7.1.2.
+    constexpr std::uint8_t kVbusReadyBit = 0x80;
+
     uint8_t vBusMsb;
     uint8_t vBusLsb;
 
-    this->writeRegister(Register::TaskVbusMeasure_7, (uint8_t)Command::Trigger);
+    if (! (this->writeRegister(Register::TaskVbusMeasure_7, (uint8_t)Command::Trigger) &&
+           this->waitForAdcReady(kVbusReadyBit) &&
+           this->readRegister(Register::AdcVbatResultMsb_3, vBusMsb) &&
+           this->readRegister(Register::AdcGpResultLsbs_1, vBusLsb)))
+        return false;
 
-    this->readRegister(Register::AdcVbatResultMsb_3, vBusMsb);
-    this->readRegister(Register::AdcGpResultLsbs_1, vBusLsb);
     // AdcGpResultLsbs_1 is shared between burst-mode VBAT0..3 and VBUS,
     // the same way AdcVbatResultMsb_3 is shared between VBAT3-burst and
     // VBUS: when TASK_VBUS7_MEASURE was triggered, the VBUS LSBs are in
@@ -138,18 +182,25 @@ float cNPM1300::measureVbus()
     // symbol VFSVBUS.
     constexpr float kAdcMaxCode10Bit = 1023.0f;
     constexpr float kVfsVbus = 7.5f;
-    return (result / kAdcMaxCode10Bit) * kVfsVbus;
+    voltage = (result / kAdcMaxCode10Bit) * kVfsVbus;
+    return true;
     }
 
-float cNPM1300::measureVsys()
+bool cNPM1300::measureVsys(float &voltage)
     {
+    // EVENTADCVSYSRDY: EVENTSADCSET/EVENTSADCCLR field D (bit 3). See
+    // datasheet section 7.7.1.2.
+    constexpr std::uint8_t kVsysReadyBit = 0x08;
+
     uint8_t vSysMsb;
     uint8_t vSysLsb;
 
-    this->writeRegister(Register::TaskVsysMeasure, (uint8_t)Command::Trigger);
+    if (! (this->writeRegister(Register::TaskVsysMeasure, (uint8_t)Command::Trigger) &&
+           this->waitForAdcReady(kVsysReadyBit) &&
+           this->readRegister(Register::AdcVsysResultMsb, vSysMsb) &&
+           this->readRegister(Register::AdcGpResultLsbs_0, vSysLsb)))
+        return false;
 
-    this->readRegister(Register::AdcVsysResultMsb, vSysMsb);
-    this->readRegister(Register::AdcGpResultLsbs_0, vSysLsb);
     // ADCGP0RESULTLSBS field D (bits 7:6) holds the VSYS measurement's
     // LSBs. See datasheet section 7.1.10.18, ADCGP0RESULTLSBS.
     constexpr uint8_t kVsysLsbMask = 0xC0;
@@ -168,18 +219,25 @@ float cNPM1300::measureVsys()
     // symbol VFSVSYS.
     constexpr float kAdcMaxCode10Bit = 1023.0f;
     constexpr float kVfsVsys = 6.375f;
-    return (result / kAdcMaxCode10Bit) * kVfsVsys;
+    voltage = (result / kAdcMaxCode10Bit) * kVfsVsys;
+    return true;
     }
 
-float cNPM1300::measureTemperature()
+bool cNPM1300::measureTemperature(float &temperature)
     {
+    // EVENTADCTEMPRDY: EVENTSADCSET/EVENTSADCCLR field C (bit 2). See
+    // datasheet section 7.7.1.2.
+    constexpr std::uint8_t kTempReadyBit = 0x04;
+
     uint8_t tempMsb;
     uint8_t tempLsb;
 
-    this->writeRegister(Register::TaskTempMeasure, (uint8_t)Command::Trigger);
+    if (! (this->writeRegister(Register::TaskTempMeasure, (uint8_t)Command::Trigger) &&
+           this->waitForAdcReady(kTempReadyBit) &&
+           this->readRegister(Register::AdcTempResultMsb, tempMsb) &&
+           this->readRegister(Register::AdcGpResultLsbs_0, tempLsb)))
+        return false;
 
-    this->readRegister(Register::AdcTempResultMsb, tempMsb);
-    this->readRegister(Register::AdcGpResultLsbs_0, tempLsb);
     // ADCGP0RESULTLSBS field C (bits 5:4) holds the die-temperature
     // measurement's LSBs. See datasheet section 7.1.10.18,
     // ADCGP0RESULTLSBS.
@@ -197,7 +255,8 @@ float cNPM1300::measureTemperature()
     // equation, variable KDIETEMP.
     constexpr float kDieTempIntercept = 394.67f;
     constexpr float kDieTempSlope = 0.7926f;
-    return kDieTempIntercept - (kDieTempSlope * result);
+    temperature = kDieTempIntercept - (kDieTempSlope * result);
+    return true;
     }
 
 bool cNPM1300::getVbusStatus(uint8_t &status)
@@ -485,35 +544,23 @@ bool cNPM1300::getVbusComparatorStatus(uint8_t &status)
 
 bool cNPM1300::chargerOn()
     {
-    bool result_1, result_2;
+    if (! this->applyNtc())
+        return false;
 
-    // BCHGDISABLESET field B (DISABLENTC, bit 1): set to make the
-    // charger ignore the NTC thermistor's temperature limits. See
-    // datasheet section 6.2.14.6, BCHGDISABLESET.
-    constexpr uint8_t kBChgDisableNtcBit = 0x02;
-    result_1 = this->writeRegister(Register::BChgDisableSet, kBChgDisableNtcBit);
-    result_2 = this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger);
-
-    return (result_1 && result_2);
+    return this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger);
     }
 
-bool cNPM1300::ignoreNtc(bool ignore)
+bool cNPM1300::applyNtc()
     {
-    bool result;
-    if (ignore)
-        {
-        // BCHGDISABLESET field B (DISABLENTC, bit 1): set to make the
-        // charger ignore the NTC thermistor's temperature limits. See
-        // datasheet section 6.2.14.6, BCHGDISABLESET.
-        constexpr uint8_t kBChgDisableNtcBit = 0x02;
-        result = this->writeRegister(Register::BChgDisableSet, kBChgDisableNtcBit);
-        }
-    else
-        {
-        result = this->writeRegister(Register::BChgDisableClr, (uint8_t)Command::Trigger);
-        }
+    // BCHGDISABLESET/BCHGDISABLECLR field B (DISABLENTC, bit 1): set to
+    // make the charger ignore the NTC thermistor's temperature limits,
+    // clear to apply them. See datasheet section 6.2.14.6.
+    constexpr uint8_t kBChgDisableNtcBit = 0x02;
 
-    return result;
+    return this->writeRegister(
+        this->m_ntc == Ntc::NotFitted ? Register::BChgDisableSet : Register::BChgDisableClr,
+        kBChgDisableNtcBit
+        );
     }
 
 bool cNPM1300::enableRecharge(bool enable)

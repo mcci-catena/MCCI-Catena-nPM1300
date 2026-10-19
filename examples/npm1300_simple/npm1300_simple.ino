@@ -50,7 +50,8 @@ void setup()
 
     Serial.println("nPM1300 Simple Test");
 
-    if (!gNpm1300.begin())
+    // this example assumes a board with no NTC thermistor.
+    if (!gNpm1300.begin(cNPM1300::Ntc::NotFitted))
         {
         Serial.println("Failed to initialize nPM1300!");
         delay(1000);
@@ -58,7 +59,6 @@ void setup()
         }
 
     gNpm1300.setVterm(cNPM1300::Vterm::V4_15);
-    gNpm1300.ignoreNtc(true); // mandatory, if you don't have a ntc connected!
     gNpm1300.setChargeCurrent(400);
     }
 
@@ -66,21 +66,53 @@ void loop()
     {
     gNpm1300.setVterm(cNPM1300::Vterm::V4_15);
 
-    float vBat = gNpm1300.measureVbat();
-    Serial.print("Battery Voltage: ");
-    Serial.println(vBat, 3);
+    float vBat;
+    if (gNpm1300.measureVbat(vBat))
+        {
+        Serial.print("Battery Voltage: ");
+        Serial.println(vBat, 3);
+        }
+    else
+        {
+        Serial.print("measureVbat() failed: ");
+        Serial.println(gNpm1300.getLastErrorName());
+        }
 
-    float temperature = gNpm1300.measureTemperature();
-    Serial.print("Temperature: ");
-    Serial.println(temperature);
+    float temperature;
+    if (gNpm1300.measureTemperature(temperature))
+        {
+        Serial.print("Temperature: ");
+        Serial.println(temperature);
+        }
+    else
+        {
+        Serial.print("measureTemperature() failed: ");
+        Serial.println(gNpm1300.getLastErrorName());
+        }
 
-    float vSys = gNpm1300.measureVsys();
-    Serial.print("System Voltage: ");
-    Serial.println(vSys);
+    float vSys;
+    if (gNpm1300.measureVsys(vSys))
+        {
+        Serial.print("System Voltage: ");
+        Serial.println(vSys);
+        }
+    else
+        {
+        Serial.print("measureVsys() failed: ");
+        Serial.println(gNpm1300.getLastErrorName());
+        }
 
-    float vBus = gNpm1300.measureVbus();
-    Serial.print("Bus Voltage: ");
-    Serial.println(vBus);
+    float vBus;
+    if (gNpm1300.measureVbus(vBus))
+        {
+        Serial.print("Bus Voltage: ");
+        Serial.println(vBus);
+        }
+    else
+        {
+        Serial.print("measureVbus() failed: ");
+        Serial.println(gNpm1300.getLastErrorName());
+        }
 
     uint8_t vBusStatus;
     if (gNpm1300.getVbusStatus(vBusStatus))

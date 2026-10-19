@@ -65,7 +65,7 @@ getLocal(std::uint32_t v)
     }
 
 /// \brief version of library, for use by clients in static_asserts
-static constexpr std::uint32_t kVersion = makeVersion(1,1,0,0);
+static constexpr std::uint32_t kVersion = makeVersion(1,2,0,0);
 
 /// \brief instance object for nPm 1300 IC
 class cNPM1300
@@ -460,6 +460,15 @@ public:
         I2cWriteFailed
         };
 
+    /// \brief whether the board has a battery NTC thermistor.
+    ///
+    /// This is a property of the board, so begin() requires it.
+    enum class Ntc : std::uint8_t
+        {
+        NotFitted,          ///< no thermistor: the charger ignores the NTC limits.
+        Fitted,             ///< thermistor fitted: the charger applies the NTC limits.
+        };
+
     /// \brief state of the meaurement engine
     enum class State : std::uint8_t
         {
@@ -516,11 +525,16 @@ public:
     ///
     /// \brief Initialize the NPM1300 IC and start operation.
     ///
+    /// \param [in] ntc says whether the board has a battery NTC thermistor.
+    ///     There is no default: on a board without one, the charger
+    ///     refuses to charge unless it is told to ignore the NTC limits.
+    ///     begin() applies the setting, and chargerOn() applies it again.
+    ///
     /// \returns
     ///     \c true for success, \c false for failure (in which case the the last
     ///     error is set to the error reason).
     ///
-    bool begin();
+    bool begin(Ntc ntc);
 
     /// \brief end operation;
     void end();
@@ -588,16 +602,49 @@ public:
         }
 
     /// \brief measure Vbat
-    float measureVbat();
+    ///
+    /// \param [out] v is set to the battery voltage, in volts, on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureVbat(float &voltage);
 
     /// \brief measure Vbus
-    float measureVbus();
+    ///
+    /// \param [out] v is set to the bus voltage, in volts, on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureVbus(float &voltage);
 
     /// \brief measure Vsys
-    float measureVsys();
+    ///
+    /// \param [out] v is set to the system voltage, in volts, on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureVsys(float &voltage);
 
     /// \brief measure die Temperature
-    float measureTemperature();
+    ///
+    /// \param [out] t is set to the die temperature, in degrees C, on
+    ///     success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure (I2C error, or the
+    ///     conversion didn't finish in time). The last error is set in
+    ///     case of error.
+    ///
+    bool measureTemperature(float &temperature);
 
     /// \brief get the status of Vbus
     ///
@@ -857,17 +904,17 @@ public:
     bool getVbusComparatorStatus(uint8_t &status);
 
     /// \brief turn on the charger
-    bool chargerOn();
-
-    /// \brief ignore the NTC thermistor (if it is not used)
     ///
-    /// \param [in] ignore true to ignore false to use.
+    /// Applies the NTC setting given to begin(), then starts the charger.
     ///
     /// \return
     ///     \c true for success, \c false for failure. The
     ///     last error is set in case of error.
     ///
-    bool ignoreNtc(bool ignore);
+    bool chargerOn();
+
+    /// \brief return the NTC setting given to begin().
+    Ntc getNtc() const { return this->m_ntc; }
 
     /// \brief enable recharging of battery once charged
     ///
@@ -1097,6 +1144,21 @@ protected:
     bool writeRegister(cNPM1300::Register reg, std::uint8_t value);
 
     ///
+    /// \brief wait for an ADC conversion to finish.
+    ///
+    /// \param [in] eventBit selects the EVENTADC*RDY bit (in
+    ///     EVENTSADCSET / EVENTSADCCLR) for the conversion that was just
+    ///     triggered; see datasheet section 7.7.1.2.
+    ///
+    /// \return
+    ///     \c true once the bit is set (and it's been cleared again, so
+    ///     the next conversion starts clean); \c false on an I2C error,
+    ///     or if the bit doesn't get set within a generous timeout, in
+    ///     which case Error::NotMeasuring is set as the last error.
+    ///
+    bool waitForAdcReady(std::uint8_t eventBit);
+
+    ///
     /// \brief Make sure the driver is running
     ///
     /// If not running, set last error to Error::Uninitialized, and return \c false.
@@ -1119,6 +1181,9 @@ protected:
         }
 
 private:
+    /// \brief tell the charger whether to apply the NTC limits, from m_ntc.
+    bool applyNtc();
+
     TwoWire *m_wire {nullptr};                              ///< pointer to bus to be used for this device
     std::uint32_t m_tReady {0};                             ///< estimated time next measurement will be ready (millis)
     Address m_address {Address::NPM1300};                   ///< I2C address to be used
@@ -1127,6 +1192,7 @@ private:
     State m_state                                           ///< current state
         { State::Uninitialized };                           ///< initially not yet started.
     bool ledState[3] = {false};                             ///< LEDDRV state
+    Ntc m_ntc {Ntc::NotFitted};                             ///< set by begin()
     };
 
 } // end namespace McciCatenaNpm1300
