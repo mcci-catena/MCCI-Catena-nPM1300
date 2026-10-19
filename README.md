@@ -77,6 +77,7 @@ void loop() {
 - **`bool setBuckVoltage_1(Voltage voltage)`**: Set output voltage for Buck 1.
 - **`bool setBuckVoltage_2(Voltage voltage)`**: Set output voltage for Buck 2.
 - **`bool getBuckStatus(uint8_t &status)`**: Get the Buck 1/Buck 2 enable status register. Returns `false` (and leaves `status` unchanged) if the read fails.
+- **`bool getLoadSwitchStatus(uint8_t &status)`**: Get the load switch status register (LDSWSTATUS). Returns `false` (and leaves `status` unchanged) if the read fails.
 
 ### Load Switch and LDO
 - **`bool setLoadSwitch_1(bool state)`**: Control Load Switch 1.

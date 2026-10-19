@@ -269,6 +269,11 @@ bool cNPM1300::getBuckStatus(uint8_t &status)
     return this->readRegister(Register::BuckStatus, status);
     }
 
+bool cNPM1300::getLoadSwitchStatus(uint8_t &status)
+    {
+    return this->readRegister(Register::LdswStatus, status);
+    }
+
 bool cNPM1300::setBuck_1(bool state)
     {
     bool result;

@@ -65,7 +65,7 @@ getLocal(std::uint32_t v)
     }
 
 /// \brief version of library, for use by clients in static_asserts
-static constexpr std::uint32_t kVersion = makeVersion(1,2,0,0);
+static constexpr std::uint32_t kVersion = makeVersion(1,3,0,1);
 
 /// \brief instance object for nPm 1300 IC
 class cNPM1300
@@ -667,6 +667,17 @@ public:
     ///     unchanged on failure.
     ///
     bool getBuckStatus(uint8_t &status);
+
+    /// \brief get the status of the load switches (LDSWSTATUS)
+    ///
+    /// \param [out] status is set to the register value on success.
+    ///
+    /// \return
+    ///     \c true for success, \c false for failure. The
+    ///     last error is set in case of error; \p status is
+    ///     unchanged on failure.
+    ///
+    bool getLoadSwitchStatus(uint8_t &status);
 
     /// \brief enable or disable the Buck 1
     ///
