@@ -274,6 +274,11 @@ bool cNPM1300::getLoadSwitchStatus(uint8_t &status)
     return this->readRegister(Register::LdswStatus, status);
     }
 
+bool cNPM1300::enterShipMode()
+    {
+    return this->writeRegister(Register::TaskEnterShipMode, (uint8_t)Command::Trigger);
+    }
+
 bool cNPM1300::setBuck_1(bool state)
     {
     bool result;
