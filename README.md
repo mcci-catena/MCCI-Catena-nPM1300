@@ -43,7 +43,7 @@ McciCatenaNpm1300::cNPM1300 npm1300 {Wire};
 
 void setup() {
     Wire.begin();
-    if (npm1300.begin()) {
+    if (npm1300.begin(cNPM1300::Ntc::NotFitted)) {
         Serial.println("nPM1300 initialized successfully.");
     } else {
         Serial.print("Failed to initialize nPM1300: ");
@@ -59,7 +59,7 @@ void loop() {
 ## API Reference
 
 ### Initialization and State
-- **`bool begin()`**: Initialize the nPM1300 device.
+- **`bool begin(cNPM1300::Ntc ntc)`**: Initialize the nPM1300 device. `ntc` says whether the board has a battery NTC thermistor (`Ntc::Fitted` or `Ntc::NotFitted`); there is no default, because on a board without one the charger refuses to charge unless told to ignore the NTC limits. `begin()` applies the setting.
 - **`void end()`**: Terminate the device operation.
 - **`bool reset()`**: Perform a soft reset on the nPM1300.
 
@@ -109,9 +109,9 @@ void loop() {
 - **`bool setLoadSwitchGpioControl_2(uint8_t gpioNumber, bool invert)`**: Configure GPIO control for Load Switch 2.
 
 ### Battery Charger
-- **`bool chargerOn()`**: Enable the charger.
+- **`bool chargerOn()`**: Apply the NTC setting given to `begin()`, then enable the charger.
 - **`bool chargerOff()`**: Disable the charger.
-- **`bool ignoreNtc(bool ignore)`**: Ignore (or use) the NTC thermistor's temperature limits. Set `true` if no NTC thermistor is connected.
+- **`cNPM1300::Ntc getNtc() const`**: Return the NTC setting given to `begin()`.
 - **`bool enableRecharge(bool enable)`**: Enable or disable recharging of the battery once charged.
 - **`bool setChargeCurrent(uint16_t limit)`**: Set charge current (32-800 mA, in 2 mA steps).
 - **`bool getVterm(uint8_t &vTerm)`**: Get the battery charger's normal termination voltage. Returns `false` (and leaves `vTerm` unchanged) if the read fails.
@@ -142,7 +142,7 @@ void setup() {
     Wire.begin();
     Serial.begin(9600);
 
-    if (!npm1300.begin()) {
+    if (!npm1300.begin(cNPM1300::Ntc::NotFitted)) {
         Serial.print("Failed to initialize nPM1300: ");
         Serial.println(npm1300.getLastErrorName());
         while (true);

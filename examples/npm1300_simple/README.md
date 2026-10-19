@@ -57,7 +57,7 @@ The sketch in this directory (found [here](https://github.com/mcci-catena/MCCI-C
 ## Notes
 
 - Ensure the nPM1300 module is correctly connected and powered.
-- If no NTC is connected, always call `ignoreNtc(true)` during initialization to avoid errors.
+- Pass `cNPM1300::Ntc::NotFitted` to `begin()` if no NTC thermistor is connected, `Ntc::Fitted` if one is.
 
 ## Meta
 

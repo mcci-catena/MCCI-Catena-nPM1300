@@ -50,7 +50,8 @@ void setup()
 
     Serial.println("nPM1300 Simple Test");
 
-    if (!gNpm1300.begin())
+    // this example assumes a board with no NTC thermistor.
+    if (!gNpm1300.begin(cNPM1300::Ntc::NotFitted))
         {
         Serial.println("Failed to initialize nPM1300!");
         delay(1000);
@@ -58,7 +59,6 @@ void setup()
         }
 
     gNpm1300.setVterm(cNPM1300::Vterm::V4_15);
-    gNpm1300.ignoreNtc(true); // mandatory, if you don't have a ntc connected!
     gNpm1300.setChargeCurrent(400);
     }
 

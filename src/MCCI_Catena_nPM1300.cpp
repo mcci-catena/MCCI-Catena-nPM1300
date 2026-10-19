@@ -28,8 +28,10 @@ cNPM1300::~cNPM1300()
     {
     }
 
-bool cNPM1300::begin()
+bool cNPM1300::begin(Ntc ntc)
     {
+    this->m_ntc = ntc;
+
     // if no Wire is bound, fail.
     if (this->m_wire == nullptr)
         {
@@ -54,7 +56,10 @@ bool cNPM1300::begin()
         return false;
 
     this->setState(State::Initial);
-    return true;
+
+    // a board with no thermistor must have the NTC limits ignored before
+    // anyone turns the charger on.
+    return this->applyNtc();
     }
 
 void cNPM1300::end()
@@ -539,31 +544,23 @@ bool cNPM1300::getVbusComparatorStatus(uint8_t &status)
 
 bool cNPM1300::chargerOn()
     {
-    // Starts the charger only. Whether the NTC thermistor's temperature
-    // limits apply is the caller's choice, made through ignoreNtc() --
-    // not something chargerOn() should decide. A board with no NTC
-    // thermistor fitted must call ignoreNtc(true) first, or the charger
-    // will refuse to charge.
+    if (! this->applyNtc())
+        return false;
+
     return this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger);
     }
 
-bool cNPM1300::ignoreNtc(bool ignore)
+bool cNPM1300::applyNtc()
     {
-    bool result;
-    if (ignore)
-        {
-        // BCHGDISABLESET field B (DISABLENTC, bit 1): set to make the
-        // charger ignore the NTC thermistor's temperature limits. See
-        // datasheet section 6.2.14.6, BCHGDISABLESET.
-        constexpr uint8_t kBChgDisableNtcBit = 0x02;
-        result = this->writeRegister(Register::BChgDisableSet, kBChgDisableNtcBit);
-        }
-    else
-        {
-        result = this->writeRegister(Register::BChgDisableClr, (uint8_t)Command::Trigger);
-        }
+    // BCHGDISABLESET/BCHGDISABLECLR field B (DISABLENTC, bit 1): set to
+    // make the charger ignore the NTC thermistor's temperature limits,
+    // clear to apply them. See datasheet section 6.2.14.6.
+    constexpr uint8_t kBChgDisableNtcBit = 0x02;
 
-    return result;
+    return this->writeRegister(
+        this->m_ntc == Ntc::NotFitted ? Register::BChgDisableSet : Register::BChgDisableClr,
+        kBChgDisableNtcBit
+        );
     }
 
 bool cNPM1300::enableRecharge(bool enable)

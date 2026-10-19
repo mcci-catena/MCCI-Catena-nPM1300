@@ -460,6 +460,15 @@ public:
         I2cWriteFailed
         };
 
+    /// \brief whether the board has a battery NTC thermistor.
+    ///
+    /// This is a property of the board, so begin() requires it.
+    enum class Ntc : std::uint8_t
+        {
+        NotFitted,          ///< no thermistor: the charger ignores the NTC limits.
+        Fitted,             ///< thermistor fitted: the charger applies the NTC limits.
+        };
+
     /// \brief state of the meaurement engine
     enum class State : std::uint8_t
         {
@@ -516,11 +525,16 @@ public:
     ///
     /// \brief Initialize the NPM1300 IC and start operation.
     ///
+    /// \param [in] ntc says whether the board has a battery NTC thermistor.
+    ///     There is no default: on a board without one, the charger
+    ///     refuses to charge unless it is told to ignore the NTC limits.
+    ///     begin() applies the setting, and chargerOn() applies it again.
+    ///
     /// \returns
     ///     \c true for success, \c false for failure (in which case the the last
     ///     error is set to the error reason).
     ///
-    bool begin();
+    bool begin(Ntc ntc);
 
     /// \brief end operation;
     void end();
@@ -891,20 +905,16 @@ public:
 
     /// \brief turn on the charger
     ///
-    /// Does not touch the NTC temperature limits -- call ignoreNtc(true)
-    /// first if no NTC thermistor is fitted, or the charger will refuse
-    /// to charge.
-    bool chargerOn();
-
-    /// \brief ignore the NTC thermistor (if it is not used)
-    ///
-    /// \param [in] ignore true to ignore false to use.
+    /// Applies the NTC setting given to begin(), then starts the charger.
     ///
     /// \return
     ///     \c true for success, \c false for failure. The
     ///     last error is set in case of error.
     ///
-    bool ignoreNtc(bool ignore);
+    bool chargerOn();
+
+    /// \brief return the NTC setting given to begin().
+    Ntc getNtc() const { return this->m_ntc; }
 
     /// \brief enable recharging of battery once charged
     ///
@@ -1171,6 +1181,9 @@ protected:
         }
 
 private:
+    /// \brief tell the charger whether to apply the NTC limits, from m_ntc.
+    bool applyNtc();
+
     TwoWire *m_wire {nullptr};                              ///< pointer to bus to be used for this device
     std::uint32_t m_tReady {0};                             ///< estimated time next measurement will be ready (millis)
     Address m_address {Address::NPM1300};                   ///< I2C address to be used
@@ -1179,6 +1192,7 @@ private:
     State m_state                                           ///< current state
         { State::Uninitialized };                           ///< initially not yet started.
     bool ledState[3] = {false};                             ///< LEDDRV state
+    Ntc m_ntc {Ntc::NotFitted};                             ///< set by begin()
     };
 
 } // end namespace McciCatenaNpm1300
