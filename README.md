@@ -78,6 +78,7 @@ void loop() {
 - **`bool setBuckVoltage_2(Voltage voltage)`**: Set output voltage for Buck 2.
 - **`bool getBuckStatus(uint8_t &status)`**: Get the Buck 1/Buck 2 enable status register. Returns `false` (and leaves `status` unchanged) if the read fails.
 - **`bool getLoadSwitchStatus(uint8_t &status)`**: Get the load switch status register (LDSWSTATUS). Returns `false` (and leaves `status` unchanged) if the read fails.
+- **`bool enterShipMode()`**: Enter ship mode: all rails off, so on success the host loses power. With VBUS present, the nPM1300 waits for VBUS to go. VBUS above VBUSPOR, or SHPHLD held low, wakes it, and the host starts from a power-on reset.
 
 ### Load Switch and LDO
 - **`bool setLoadSwitch_1(bool state)`**: Control Load Switch 1.

@@ -65,7 +65,7 @@ getLocal(std::uint32_t v)
     }
 
 /// \brief version of library, for use by clients in static_asserts
-static constexpr std::uint32_t kVersion = makeVersion(1,3,0,1);
+static constexpr std::uint32_t kVersion = makeVersion(1,3,0,2);
 
 /// \brief instance object for nPm 1300 IC
 class cNPM1300
@@ -678,6 +678,20 @@ public:
     ///     unchanged on failure.
     ///
     bool getLoadSwitchStatus(uint8_t &status);
+
+    /// \brief enter ship mode (TASKENTERSHIPMODE)
+    ///
+    /// All rails turn off, so on success the host loses power and this
+    /// does not return. With VBUS present the nPM1300 doesn't enter ship
+    /// mode until VBUS is removed. The nPM1300 leaves ship mode when VBUS
+    /// rises above VBUSPOR or SHPHLD is held low; the host then starts
+    /// from a power-on reset.
+    ///
+    /// \return
+    ///     \c false if the write fails (the last error is set), or
+    ///     if the host is still running (VBUS present).
+    ///
+    bool enterShipMode();
 
     /// \brief enable or disable the Buck 1
     ///
