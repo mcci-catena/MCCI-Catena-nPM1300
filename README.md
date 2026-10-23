@@ -115,7 +115,7 @@ void loop() {
 - **`bool chargerOff()`**: Disable the charger.
 - **`cNPM1300::Ntc getNtc() const`**: Return the NTC setting given to `begin()`.
 - **`bool enableRecharge(bool enable)`**: Enable or disable recharging of the battery once charged.
-- **`bool setChargeCurrent(uint16_t limit)`**: Set charge current (32-800 mA, in 2 mA steps).
+- **`bool setChargeCurrent(uint16_t limit)`**: Set charge current (32-800 mA, in 2 mA steps). An enabled charger is disabled while the registers change and then enabled again, so the new value applies at once.
 - **`bool getVterm(uint8_t &vTerm)`**: Get the battery charger's normal termination voltage. Returns `false` (and leaves `vTerm` unchanged) if the read fails.
 - **`bool setVterm(Vterm vTerm)`**: Set the battery charger's normal termination voltage.
 - **`bool getChargeStatus(uint8_t &status)`**: Get the charging status. Returns `false` (and leaves `status` unchanged) if the read fails.
