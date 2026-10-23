@@ -648,8 +648,24 @@ bool cNPM1300::setChargeCurrent(uint16_t limit)
         lsb = 1;
         }
 
+    // the charger must be disabled while BCHGISET changes; the new value
+    // takes effect when charging is enabled (datasheet section 6.2.4).
+    // BCHGENABLESET bit 0 reads 1 while the charger is enabled (6.2.14.4).
+    uint8_t enable;
+    if (! this->readRegister(Register::BChgEnableSet, enable))
+        return false;
+
+    const bool fWasOn = (enable & 0x01) != 0;
+    if (fWasOn && ! this->writeRegister(Register::BChgEnableClr, (uint8_t)Command::Trigger))
+        return false;
+
     result_1 = this->writeRegister(Register::BChgISetMsb, msb);
     result_2 = this->writeRegister(Register::BChgISetLsb, lsb);
+
+    // turn it back on even if a write failed, so a failure doesn't
+    // leave the battery uncharged.
+    if (fWasOn && ! this->writeRegister(Register::BChgEnableSet, (uint8_t)Command::Trigger))
+        return false;
 
     return (result_1 && result_2);
     }

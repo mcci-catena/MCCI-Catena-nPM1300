@@ -65,7 +65,7 @@ getLocal(std::uint32_t v)
     }
 
 /// \brief version of library, for use by clients in static_asserts
-static constexpr std::uint32_t kVersion = makeVersion(1,3,0,2);
+static constexpr std::uint32_t kVersion = makeVersion(1,3,0,3);
 
 /// \brief instance object for nPm 1300 IC
 class cNPM1300
@@ -1010,7 +1010,12 @@ public:
 
     /// \brief set charger current limit
     ///
-    /// \param [in] limit is the current limit to be set. It should be in a range from 32 to 800.
+    /// \param [in] limit is the current limit to be set, in mA: 32 to 800,
+    ///     in 2 mA steps; values outside the range are clamped.
+    ///
+    /// If the charger is enabled, it is disabled while the registers
+    /// change and then enabled again, so the new value takes effect at
+    /// once (datasheet section 6.2.4). A disabled charger stays disabled.
     ///
     /// \return
     ///     \c true for success, \c false for failure. The
